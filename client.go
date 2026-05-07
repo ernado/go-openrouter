@@ -54,7 +54,11 @@ func (c *Client) sendRequest(req *http.Request, v any) error {
 		return c.handleErrorResp(res)
 	}
 
-	return decodeResponse(res.Body, v)
+	if err := decodeResponse(res.Body, v); err != nil {
+		return err
+	}
+	setResponseCacheMetadata(v, res.Header)
+	return nil
 }
 
 func (c *Client) setCommonHeaders(req *http.Request) {
@@ -148,6 +152,7 @@ func (c *Client) newRequest(ctx context.Context, method, url string, setters ...
 	if err != nil {
 		return nil, err
 	}
+	setResponseCacheHeadersFromBody(req.Header, args.body)
 	c.setCommonHeaders(req)
 	return req, nil
 }
@@ -167,6 +172,7 @@ func (c *Client) newStreamRequest(
 		return nil, err
 	}
 
+	setResponseCacheHeadersFromBody(req.Header, body)
 	c.setCommonHeaders(req)
 	return req, nil
 }

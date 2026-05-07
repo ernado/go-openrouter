@@ -142,6 +142,9 @@ type ChatCompletionRequest struct {
 	Provider *ChatProvider           `json:"provider,omitempty"`
 	Messages []ChatCompletionMessage `json:"messages"`
 
+	// ResponseCache controls OpenRouter response caching headers for this request.
+	ResponseCache *ResponseCacheConfig `json:"-"`
+
 	Reasoning *ChatCompletionReasoning `json:"reasoning,omitempty"`
 
 	Plugins    []ChatCompletionPlugin   `json:"plugins,omitempty"`
@@ -297,7 +300,8 @@ type ChatCompletionResponse struct {
 	Usage             *Usage                 `json:"usage,omitempty"`
 	SystemFingerprint string                 `json:"system_fingerprint"`
 
-	// http.Header
+	// ResponseCache contains OpenRouter response cache metadata from response headers.
+	ResponseCache *ResponseCacheMetadata `json:"-"`
 }
 
 type TopLogProbs struct {
@@ -807,6 +811,14 @@ type ChatCompletionStream struct {
 	stream   <-chan ChatCompletionStreamResponse
 	done     chan struct{}
 	response *http.Response
+}
+
+// ResponseCacheMetadata returns OpenRouter response cache metadata from the initial stream response headers.
+func (s *ChatCompletionStream) ResponseCacheMetadata() *ResponseCacheMetadata {
+	if s == nil || s.response == nil {
+		return nil
+	}
+	return parseResponseCacheMetadata(s.response.Header)
 }
 
 // CreateChatCompletionStreamWithFallback tries request.Model first, then

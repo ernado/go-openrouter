@@ -23,6 +23,8 @@ type CompletionRequest struct {
 	Model string `json:"model,omitempty"`
 	// The prompt to complete
 	Prompt string `json:"prompt"`
+	// ResponseCache controls OpenRouter response caching headers for this request.
+	ResponseCache *ResponseCacheConfig `json:"-"`
 	// Optional model fallbacks: https://openrouter.ai/docs/features/model-routing#the-models-parameter
 	Models    []string                 `json:"models,omitempty"`
 	Provider  *ChatProvider            `json:"provider,omitempty"`
@@ -81,6 +83,8 @@ type CompletionResponse struct {
 	Citations         []string           `json:"citations"`
 	Usage             *Usage             `json:"usage,omitempty"`
 	SystemFingerprint string             `json:"system_fingerprint"`
+	// ResponseCache contains OpenRouter response cache metadata from response headers.
+	ResponseCache *ResponseCacheMetadata `json:"-"`
 }
 
 // CreateCompletion — API call to Create a completion for the prompt.
@@ -116,6 +120,14 @@ type CompletionStream struct {
 	stream   <-chan CompletionResponse
 	done     chan struct{}
 	response *http.Response
+}
+
+// ResponseCacheMetadata returns OpenRouter response cache metadata from the initial stream response headers.
+func (s *CompletionStream) ResponseCacheMetadata() *ResponseCacheMetadata {
+	if s == nil || s.response == nil {
+		return nil
+	}
+	return parseResponseCacheMetadata(s.response.Header)
 }
 
 // CreateCompletionStream — API call to Create a completion for the prompt with streaming.

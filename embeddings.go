@@ -35,6 +35,9 @@ type EmbeddingsRequest struct {
 	// Input is the content to embed. See the API docs for supported formats.
 	Input any `json:"input"`
 
+	// ResponseCache controls OpenRouter response caching headers for this request.
+	ResponseCache *ResponseCacheConfig `json:"-"`
+
 	// EncodingFormat controls how the embedding is returned: "float" or "base64".
 	EncodingFormat EmbeddingsEncodingFormat `json:"encoding_format,omitempty"`
 	// Dimensions optionally truncates the embedding to the given number of dimensions.
@@ -96,6 +99,8 @@ type EmbeddingsResponse struct {
 	Data   []EmbeddingData  `json:"data"`
 	Model  string           `json:"model"`
 	Usage  *EmbeddingsUsage `json:"usage,omitempty"`
+	// ResponseCache contains OpenRouter response cache metadata from response headers.
+	ResponseCache *ResponseCacheMetadata `json:"-"`
 }
 
 // CreateEmbeddings submits an embedding request to the embeddings router.

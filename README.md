@@ -40,6 +40,7 @@ https://openrouter.ai/docs/api-reference/overview
 - [x] Tool calling
 - [x] Structured outputs
 - [x] Prompt caching
+- [x] Response caching
 - [x] Web search
 - [x] Multimodal [Images, PDFs, Audio]
 - [x] Usage fields
@@ -213,6 +214,71 @@ resp, err := client.CreateChatCompletionWithFallbackPolicy(
 
 `DefaultChatCompletionFallbackErrorCodes` returns a copy of the library default
 code list if you want to inspect or extend it.
+
+### Response caching
+
+OpenRouter response caching can be enabled per request for supported endpoint
+requests, including chat completions, streaming chat completions, and embeddings.
+This client also forwards the same headers on legacy completion requests for
+compatibility. Cache options are sent as HTTP headers and are not included in the
+JSON request body.
+
+```go
+enabled := true
+ttl := 3600
+
+resp, err := client.CreateChatCompletion(ctx, openrouter.ChatCompletionRequest{
+	Model: "openai/gpt-4o-mini",
+	Messages: []openrouter.ChatCompletionMessage{
+		openrouter.UserMessage("Summarize this transcript."),
+	},
+	ResponseCache: &openrouter.ResponseCacheConfig{
+		Enabled:    &enabled,
+		TTLSeconds: &ttl,
+	},
+})
+if err != nil {
+	fmt.Printf("ChatCompletion error: %v\n", err)
+	return
+}
+
+if resp.ResponseCache != nil && resp.ResponseCache.Status == openrouter.ResponseCacheStatusHit {
+	fmt.Printf("cache hit, age=%d seconds\n", *resp.ResponseCache.AgeSeconds)
+}
+```
+
+Use `Clear: true` to send `X-OpenRouter-Cache-Clear: true` for a request:
+
+```go
+resp, err := client.CreateEmbeddings(ctx, openrouter.EmbeddingsRequest{
+	Model: "openai/text-embedding-3-small",
+	Input: "hello",
+	ResponseCache: &openrouter.ResponseCacheConfig{
+		Clear: true,
+	},
+})
+```
+
+Streaming responses expose cache metadata from the initial response headers:
+
+```go
+stream, err := client.CreateChatCompletionStream(ctx, openrouter.ChatCompletionRequest{
+	Model: "openai/gpt-4o-mini",
+	Messages: []openrouter.ChatCompletionMessage{
+		openrouter.UserMessage("Write a short update."),
+	},
+	ResponseCache: &openrouter.ResponseCacheConfig{
+		Enabled: &enabled,
+	},
+})
+if err != nil {
+	fmt.Printf("ChatCompletionStream error: %v\n", err)
+	return
+}
+defer stream.Close()
+
+metadata := stream.ResponseCacheMetadata()
+```
 
 ### Other examples:
 
