@@ -107,6 +107,31 @@ func TestCreateEmbeddingsResponseCacheHeadersAndMetadata(t *testing.T) {
 	require.Equal(t, ResponseCacheStatusHit, resp.ResponseCache.Status)
 }
 
+func TestResponseCacheClearEnablesCacheWhenUnset(t *testing.T) {
+	t.Parallel()
+
+	httpClient := &fakeHTTPClient{
+		response: responseCacheJSONResponse(`{
+			"id":"embd_1",
+			"object":"list",
+			"data":[{"object":"embedding","embedding":[0.1,0.2],"index":0}],
+			"model":"test-embeddings-model"
+		}`),
+	}
+	client := newResponseCacheTestClient(httpClient)
+
+	_, err := client.CreateEmbeddings(context.Background(), EmbeddingsRequest{
+		Model: "test-embeddings-model",
+		Input: "hello",
+		ResponseCache: &ResponseCacheConfig{
+			Clear: true,
+		},
+	})
+
+	require.NoError(t, err)
+	requireResponseCacheRequestHeaders(t, httpClient.lastRequest, "true", "", "true")
+}
+
 func TestCreateChatCompletionStreamResponseCacheHeadersAndMetadata(t *testing.T) {
 	t.Parallel()
 

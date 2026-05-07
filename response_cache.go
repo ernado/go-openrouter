@@ -45,6 +45,8 @@ func setResponseCacheHeaders(header http.Header, cache *ResponseCacheConfig) {
 	}
 	if cache.Enabled != nil {
 		header.Set(headerResponseCache, strconv.FormatBool(*cache.Enabled))
+	} else if cache.Clear {
+		header.Set(headerResponseCache, "true")
 	}
 	if cache.TTLSeconds != nil {
 		header.Set(headerResponseCacheTTL, strconv.Itoa(*cache.TTLSeconds))
